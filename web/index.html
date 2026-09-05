@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <title>PAZE — Drive. Report. Get Paid.</title>
+  <link rel="icon" href="../branding/paze-logo.png" />
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../branding/brand.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="splash" class="splash hidden"></div>
+    <div id="map"></div>
+
+    <!-- Minimal top bar -->
+    <header class="top-bar">
+      <div class="brand-chip">
+        <img src="../branding/paze-logo.png" alt="" class="brand-icon" />
+        <span class="brand-name">PAZE</span>
+      </div>
+      <div class="top-actions">
+        <button id="google-settings-btn" class="google-chip" title="Google APIs Settings">🌐 Google</button>
+        <button id="web3-connect-btn" class="web3-chip" title="Web3 & Crypto Wallet"><span>⚡</span><span id="web3-btn-label">Web3</span></button>
+        <button id="trust-badge" class="trust-badge" title="Trust score">⭐ 100</button>
+        <button id="gps-enable-btn" class="icon-btn" title="Enable live GPS">📍</button>
+        <button id="wallet-btn" class="wallet-chip"><span>💰</span><span id="balance-display">$0.00</span></button>
+      </div>
+    </header>
+
+    <!-- Status pill -->
+    <div id="status-pill" class="status-pill status-warn">
+      <span id="status-text">🔍 Finding your location…</span>
+    </div>
+
+    <!-- Set location FAB -->
+    <button id="set-here-btn" class="set-here-btn" title="Set my location to map center">📍 I'm Here</button>
+
+    <!-- Bottom nav panel -->
+    <div id="nav-panel" class="nav-panel">
+      <div class="city-row">
+        <input id="city-input" type="text" placeholder="Your city (e.g. Rochester, NY)" autocomplete="off" />
+        <button id="city-btn" class="btn-go btn-sm">Set</button>
+      </div>
+      <div class="search-row">
+        <input id="destination-input" type="text" placeholder="Where to? (e.g. Niagara Falls)" autocomplete="off" />
+        <button id="search-btn" class="btn-go">Go</button>
+      </div>
+      <div id="route-info" class="route-info hidden">
+        <span id="route-distance"></span> · <span id="route-duration"></span>
+        <div class="route-btns">
+          <button id="start-nav-btn" class="btn-go">Navigate</button>
+          <button id="clear-route-btn" class="btn-clear">✕</button>
+        </div>
+      </div>
+      <div id="nav-instruction" class="nav-instruction hidden">
+        <span id="nav-step-icon">⬆️</span>
+        <div class="nav-step-body">
+          <p id="nav-step-text">Continue</p>
+          <p id="nav-step-distance" class="nav-step-dist"></p>
+        </div>
+        <button id="stop-nav-btn" class="btn-clear">Stop</button>
+      </div>
+    </div>
+
+    <!-- Hazard filters -->
+    <div id="hazard-filters" class="hazard-filters">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip active" data-filter="police">🚔 Police</button>
+      <button class="filter-chip active" data-filter="accident">🚗 Accident</button>
+      <button class="filter-chip active" data-filter="pothole">🕳️ Pothole</button>
+      <button class="filter-chip active" data-filter="traffic">🚦 Traffic</button>
+      <button class="filter-chip active" data-filter="weather">🌧️ Weather</button>
+      <button class="filter-chip active" data-filter="debris">⚠️ Debris</button>
+    </div>
+
+    <button id="hazard-list-btn" class="hazard-list-btn">⚠️ <span id="hazard-count">0</span> Alerts</button>
+    <button id="report-fab" class="report-fab">📸 Report</button>
+    <button id="live-drive-btn" class="live-drive-btn" aria-pressed="false"><span class="live-dot"></span> Live Drive</button>
+
+    <!-- Sheets -->
+    <div id="report-sheet" class="sheet hidden">
+      <h2>Report &amp; Earn</h2>
+      <p class="trust-warning">⚖️ <strong>Equal guideline pay</strong> for every verified report. <strong>Perfect Day bonus (+20%)</strong> if every task completes with zero mistakes. Settles nightly at 11:59 PM.</p>
+      <div class="hazard-grid">
+        <button class="hazard-btn" data-type="pothole">🕳️ Pothole<small>guideline $1.25</small></button>
+        <button class="hazard-btn" data-type="accident">🚗 Accident<small>guideline $2.00</small></button>
+        <button class="hazard-btn" data-type="police">🚔 Police<small>guideline $0.75</small></button>
+        <button class="hazard-btn" data-type="traffic">🚦 Traffic<small>guideline $0.50</small></button>
+        <button class="hazard-btn" data-type="weather">🌧️ Weather<small>guideline $1.00</small></button>
+        <button class="hazard-btn" data-type="debris">⚠️ Debris<small>guideline $1.50</small></button>
+      </div>
+      <button id="close-report" class="btn-clear full">Cancel</button>
+    </div>
+    <div id="hazard-sheet" class="sheet hidden">
+      <h2>⚠️ Road Alerts Nearby</h2>
+      <p class="sheet-sub">Crowdsourced reports from PAZE drivers</p>
+      <ul id="hazard-list" class="hazard-list"></ul>
+      <button id="close-hazards" class="btn-clear full">Close</button>
+    </div>
+    <div id="hazard-popup" class="hazard-popup hidden">
+      <button id="close-popup" class="popup-close">✕</button>
+      <div id="popup-icon" class="popup-icon"></div>
+      <h3 id="popup-title"></h3>
+      <p id="popup-meta" class="popup-meta"></p>
+      <p id="popup-desc"></p>
+      <p id="popup-status" class="popup-status"></p>
+      <div id="popup-verify" class="popup-verify hidden">
+        <button id="confirm-report" class="btn-confirm">✓ Confirm Real</button>
+        <button id="flag-false" class="btn-flag">✗ False Report</button>
+      </div>
+    </div>
+    <div id="wallet-sheet" class="sheet hidden">
+      <h2>Earnings</h2>
+      <p id="wallet-balance" class="wallet-big">$0.00</p>
+      <p class="wallet-meta">Available balance · Trust <span id="trust-score">100</span>/100</p>
+      <div class="payout-panel">
+        <p id="perfection-status" class="perfection-status">Submit verified reports for guideline pay + perfection bonus</p>
+        <div class="payout-row"><span>Today's queue</span><strong id="pending-balance">$0.00</strong></div>
+        <div class="payout-row sub"><span>Verified (guideline)</span><span id="today-verified">$0.00</span></div>
+        <div class="payout-row sub"><span>Awaiting confirm</span><span id="today-pending">$0.00</span></div>
+        <div class="payout-row sub"><span>Guideline base</span><span id="today-base">$0.00</span></div>
+        <div class="payout-row sub bonus"><span>Perfection + loyalty bonus</span><span id="today-bonus">$0.00</span></div>
+        <div class="payout-row highlight"><span>Est. tonight</span><strong id="today-estimate">$0.00</strong></div>
+        <div class="payout-row sub"><span>Settlement in</span><span id="payout-countdown">—</span></div>
+        <div class="payout-scale">Perfect streak: <span id="perfect-streak">0</span> days · Lifetime perfect: <span id="perfect-days">0</span></div>
+      </div>
+      <p class="wallet-meta">Verified: <span id="stat-verified">0</span> · False: <span id="stat-false">0</span> · Penalties: <span id="stat-penalties">$0.00</span></p>
+      <p>Lifetime earned: <span id="lifetime-earnings">$0.00</span></p>
+      <ul id="activity-list" class="activity-list"></ul>
+      <button id="cashout-btn" class="btn-go full" disabled>Cash Out to Crypto Rails ($5 min)</button>
+      <button id="demo-settle-btn" class="btn-clear full">Run Tonight's Payout (Demo)</button>
+      <button id="close-wallet" class="btn-clear full">Close</button>
+    </div>
+
+    <!-- Google Settings Sheet -->
+    <div id="google-sheet" class="sheet hidden">
+      <h2>🌐 Google Maps &amp; Cloud APIs</h2>
+      <p class="sheet-sub">High-precision Places autocomplete, Traffic Directions &amp; Roads snap</p>
+      
+      <div class="modal-section">
+        <h3>🔑 Google Cloud API Key</h3>
+        <p class="wallet-meta">Paste your Google Maps Platform API key (requires Places API, Directions API, and Roads API enabled).</p>
+        <div class="form-group" style="margin-top:8px;">
+          <input id="google-api-key-input" type="password" class="form-control" placeholder="AIzaSy..." autocomplete="off" />
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="save-google-key-btn" class="btn-go" style="padding:8px 14px; font-size:0.85rem;">Save Key</button>
+          <button id="clear-google-key-btn" class="btn-clear" style="padding:8px 14px; font-size:0.85rem;">Clear / Use OSM</button>
+        </div>
+        <p id="google-status-msg" class="wallet-meta" style="margin-top:8px; color:#4285f4; font-weight:600;">Fallback Mode (OpenStreetMap &amp; OSRM)</p>
+      </div>
+
+      <div class="modal-section">
+        <h3>⚙️ Services &amp; Traffic</h3>
+        <label class="checkbox-row">
+          <input id="chk-google-places" type="checkbox" checked />
+          <span>Google Places Search &amp; POI lookup</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="chk-google-routes" type="checkbox" checked />
+          <span>Live Traffic-Aware Directions &amp; Routing</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="chk-google-roads" type="checkbox" checked />
+          <span>Google Roads Snap (Precision roadway alignment)</span>
+        </label>
+      </div>
+
+      <button id="close-google" class="btn-clear full">Close</button>
+    </div>
+
+    <!-- Web3 Wallet Sheet -->
+    <div id="web3-sheet" class="sheet hidden">
+      <h2>⚡ Web3 &amp; Crypto Rails</h2>
+      <p class="sheet-sub">Decentralized driver wallet, on-chain rewards &amp; instant Layer 2 settlement</p>
+
+      <div class="crypto-rates-bar" id="crypto-rates-display">
+        <span>ETH: <strong id="rate-eth">$3,150</strong></span>
+        <span>USDC: <strong>$1.00</strong></span>
+        <span>POL: <strong id="rate-pol">$0.45</strong></span>
+        <span>SOL: <strong id="rate-sol">$185</strong></span>
+      </div>
+
+      <div class="modal-section">
+        <h3>👛 Active Driver Wallet</h3>
+        <p id="wallet-type-badge" class="wallet-meta">Using PAZE On-Device Non-Custodial Key</p>
+        <div class="address-box">
+          <span id="active-web3-address">0x000...000</span>
+          <button id="copy-address-btn" class="btn-copy">Copy</button>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="connect-external-wallet-btn" class="btn-go" style="padding:8px 12px; font-size:0.8rem; background:#6366f1;">Connect MetaMask / Coinbase</button>
+          <button id="view-private-key-btn" class="btn-clear" style="padding:8px 12px; font-size:0.8rem;">Export Key</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h3>⛓️ Network Settlement Rail</h3>
+        <div class="form-group">
+          <label>Selected Settlement Chain:</label>
+          <select id="chain-select" class="form-control">
+            <option value="8453">Base Mainnet (Coinbase L2 - Near Zero Fees)</option>
+            <option value="137">Polygon PoS (Ultra Low Gas)</option>
+            <option value="42161">Arbitrum One</option>
+            <option value="1">Ethereum Mainnet</option>
+          </select>
+        </div>
+        <p class="wallet-meta">Road rewards &amp; live drive mileage settle directly in USDC or native tokens.</p>
+      </div>
+
+      <button id="open-cashout-from-web3" class="btn-go full" style="background:#10b981;">Transfer / Cash Out to Crypto</button>
+      <button id="close-web3" class="btn-clear full">Close</button>
+    </div>
+
+    <!-- Crypto Cash Out / Rails Modal -->
+    <div id="crypto-cashout-sheet" class="sheet hidden">
+      <h2>💸 Cash Out to Crypto Rails</h2>
+      <p class="sheet-sub">Withdraw your road rewards with zero merchant friction</p>
+
+      <div class="modal-section">
+        <p class="wallet-meta">Available Balance to Withdraw:</p>
+        <h3 id="cashout-avail-balance" style="font-size:1.8rem; color:#00c896; margin:6px 0;">$0.00</h3>
+      </div>
+
+      <h3>Select Payout Rail:</h3>
+      <div class="rail-grid">
+        <div class="rail-card selected" data-rail="base_usdc">
+          <span class="rail-badge l2">Base L2</span>
+          <h4>Base USDC</h4>
+          <p>Instant settlement, &lt;$0.01 gas fee directly to your wallet.</p>
+        </div>
+        <div class="rail-card" data-rail="polygon_usdc">
+          <span class="rail-badge poly">Polygon</span>
+          <h4>Polygon USDC</h4>
+          <p>Micro-payouts in PoS USDC with instant finality.</p>
+        </div>
+        <div class="rail-card" data-rail="coinbase_pay">
+          <span class="rail-badge coinbase">Exchange</span>
+          <h4>Coinbase Pay</h4>
+          <p>Off-ramp straight into your Coinbase account or debit card.</p>
+        </div>
+        <div class="rail-card" data-rail="exchange_offramp">
+          <span class="rail-badge" style="background:#f59e0b;">Off-Ramp</span>
+          <h4>Exchange Rail</h4>
+          <p>Deposit to Kraken, Binance, or institutional exchange.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Destination Address / Exchange Account:</label>
+        <input id="payout-dest-address" type="text" class="form-control" placeholder="0x... or Coinbase email" />
+      </div>
+
+      <button id="confirm-payout-btn" class="btn-go full" style="background:#00c896; font-size:1rem; padding:14px;">Confirm Instant Payout</button>
+      <button id="close-cashout" class="btn-clear full">Cancel</button>
+    </div>
+
+    <div id="overlay" class="overlay hidden"></div>
+    <div id="toast" class="toast hidden"></div>
+  </div>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="google_apis.js"></script>
+  <script src="web3_rails.js"></script>
+  <script src="app.js?v=10"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+:root {
+  --paze-blue: #007acc;
+  --paze-blue-dark: #005f9e;
+  --paze-navy: #1a1a2e;
+  --paze-navy-light: #2d2d44;
+  --paze-green: #00c896;
+  --paze-green-dark: #00a67d;
+  --paze-orange: #ff6b35;
+  --paze-red: #e63946;
+  --paze-yellow: #ffd166;
+  --paze-surface: #0f0f1a;
+  --paze-card: #1e1e32;
+  --paze-text: #f0f4f8;
+  --paze-muted: #8892a4;
+  --paze-radius: 16px;
+  --paze-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --font-display: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
