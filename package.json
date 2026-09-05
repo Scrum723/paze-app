@@ -1,0 +1,22 @@
+{
+  "name": "paze-app",
+  "version": "1.0.0",
+  "description": "PAZE — Decentralized road intelligence & navigation platform with Google APIs, Web3 backing, and crypto rails",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "paze",
+    "navigation",
+    "web3",
+    "crypto",
+    "google-maps",
+    "crowdsourced-intelligence"
+  ],
+  "author": "PAZE Network",
+  "license": "MIT"
+}
