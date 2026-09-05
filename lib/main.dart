@@ -4,7 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'models/crypto_wallet.dart';
 import 'models/hazard_model.dart';
 import 'services/crypto_rails_service.dart';
 import 'services/google_maps_service.dart';
@@ -59,7 +58,7 @@ class _PazeHomeState extends State<PazeHome> {
   bool _liveDrive = false;
   double _balance = 0.0;
   int _reports = 0;
-  int _trustScore = 100;
+  final int _trustScore = 100;
   String? _routeInfo;
   final List<HazardModel> _hazards = [];
 
